@@ -1,0 +1,6 @@
+streamlit
+pandas
+random
+pygwalker
+numpy
+scikit-learn
