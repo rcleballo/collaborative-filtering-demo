@@ -13,7 +13,6 @@ positive_reviews = [
     "Solid product, will purchase again.",
     "Good value for money."
 ]
-
 negative_reviews = [
     "Satisfactory but could be better.",
     "Quality is good, but delivery was slow.",
@@ -45,7 +44,7 @@ for product in product_names:
             review = random.choice(negative_reviews)
         
         reviews_data.append([product, customer, rating, review])
-        
+
 # Convert the data into a DataFrame for easy manipulation and analysis
 df2 = pd.DataFrame(reviews_data, columns=['Product', 'Customer', 'Rating', 'Review'])
 
@@ -62,45 +61,38 @@ def predict_ratings(user_index, user_similarity, user_ratings):
     weighted_ratings = user_ratings.T.dot(sim_scores) / np.abs(sim_scores).sum()
     return weighted_ratings
 
-# Recommend Products Function
-def recommend_products(user, actual_ratings, predicted_ratings, top_n=3):
-    rated_products = actual_ratings[actual_ratings > 0]
-    recommendations = predicted_ratings[rated_products == 0].sort_values(ascending=False).head(top_n)
-    return recommendations
+# Recommend Products Based on a Selected Product
+def recommend_products_based_on_product(selected_product, user_index, user_item_matrix, top_n=3):
+    similar_users = user_similarity[user_index]
+    predicted_ratings = np.dot(similar_users, user_item_matrix) / np.sum(np.abs(similar_users))
+    predicted_ratings_df = pd.DataFrame(predicted_ratings, index=user_item_matrix.index, columns=user_item_matrix.columns)
+    
+    # Recommend products for the user based on predicted ratings for unrated products
+    recommendations = predicted_ratings_df.loc[user_index, user_item_matrix.loc[user_index] == 0]
+    return recommendations.sort_values(ascending=False).head(top_n)
 
 # Streamlit Interface
-st.title("Product Recommendation System with PyGWalker")
+st.set_page_config(page_title="Product Recommendation System with PyGWalker", layout="wide")
+st.title("Simulated Shop with Product Recommendations")
 
-# Select Customer
+# Step 1: Select a customer
 customer = st.selectbox("Select Customer", user_item_matrix.index)
 
-# Predict Ratings for Selected Customer
+# Step 2: Customer selects a product
+selected_product = st.selectbox("Pick a product", product_names)
+
+# Step 3: Predict Ratings and Recommend Products
 customer_index = user_item_matrix.index.get_loc(customer)
 predicted_ratings = predict_ratings(customer_index, user_similarity, user_item_matrix.values)
 
-# Convert predictions to a Series for easier manipulation
-predicted_ratings_series = pd.Series(predicted_ratings, index=user_item_matrix.columns)
+# Recommend based on the selected product
+st.write(f"**You selected: {selected_product}**")
 
-# Display Actual and Predicted Ratings
-st.write(f"**Actual Ratings by {customer}:**")
-actual_ratings = user_item_matrix.loc[customer]
-st.write(actual_ratings)
+# Recommend similar products based on the selected one
+recommendations = recommend_products_based_on_product(selected_product, customer_index, user_item_matrix)
+st.write(f"**Recommended Products for {customer} based on {selected_product}:**")
+st.write(recommendations)
 
-st.write(f"**Predicted Ratings for {customer}:**")
-st.write(predicted_ratings_series)
-
-# Recommend Top Products
-top_recommendations = recommend_products(customer, actual_ratings, predicted_ratings_series)
-st.write(f"**Top {len(top_recommendations)} Product Recommendations for {customer}:**")
-st.write(top_recommendations)
-
-# **PyGWalker Visualization**
+# PyGWalker Visualization
 st.write("## Explore the Data using PyGWalker")
-
-Use PyGWalker to create an interactive visualization of your dataframe
-
-# Generate the HTML using PyGWalker
-pyg_html = pyg.walk(df2, return_html = True)
-
-# Embed the HTML into the StreamLit app
-components.html(pyg_html, height = 1000, scrolling = True)
+pyg.walk(df2)
