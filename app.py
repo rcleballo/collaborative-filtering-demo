@@ -97,5 +97,5 @@ st.write(top_recommendations)
 # **PyGWalker Visualization**
 st.write("## Explore the Data using PyGWalker")
 
-Use PyGWalker to create an interactive visualization of your dataframe
+# Use PyGWalker to create an interactive visualization of your dataframe
 pyg.walk(df2)
