@@ -64,12 +64,19 @@ def predict_ratings(user_index, user_similarity, user_ratings):
 # Recommend Products Based on a Selected Product
 def recommend_products_based_on_product(selected_product, user_index, user_item_matrix, top_n=3):
     similar_users = user_similarity[user_index]
-    predicted_ratings = np.dot(similar_users, user_item_matrix) / np.sum(np.abs(similar_users))
-    predicted_ratings_df = pd.DataFrame(predicted_ratings, index=user_item_matrix.index, columns=user_item_matrix.columns)
     
-    # Recommend products for the user based on predicted ratings for unrated products
-    recommendations = predicted_ratings_df.loc[user_index, user_item_matrix.loc[user_index] == 0]
-    return recommendations.sort_values(ascending=False).head(top_n)
+    # Compute weighted ratings based on similar users' preferences
+    predicted_ratings = np.dot(similar_users, user_item_matrix) / np.sum(np.abs(similar_users))
+    
+    # Ensure the predicted ratings have the correct shape
+    predicted_ratings_df = pd.Series(predicted_ratings, index=user_item_matrix.columns)
+    
+    # Only recommend products the user hasn't rated yet
+    user_ratings = user_item_matrix.iloc[user_index]
+    unrated_products = user_ratings[user_ratings == 0].index
+    
+    recommendations = predicted_ratings_df[unrated_products].sort_values(ascending=False).head(top_n)
+    return recommendations
 
 # Streamlit Interface
 st.set_page_config(page_title="Product Recommendation System with PyGWalker", layout="wide")
@@ -83,7 +90,6 @@ selected_product = st.selectbox("Pick a product", product_names)
 
 # Step 3: Predict Ratings and Recommend Products
 customer_index = user_item_matrix.index.get_loc(customer)
-predicted_ratings = predict_ratings(customer_index, user_similarity, user_item_matrix.values)
 
 # Recommend based on the selected product
 st.write(f"**You selected: {selected_product}**")
