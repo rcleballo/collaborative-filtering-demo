@@ -64,19 +64,26 @@ def predict_ratings(user_index, user_similarity, user_ratings):
 # Recommend Products Based on a Selected Product
 def recommend_products_based_on_product(selected_product, user_index, user_item_matrix, top_n=3):
     similar_users = user_similarity[user_index]
-    
-    # Compute weighted ratings based on similar users' preferences
     predicted_ratings = np.dot(similar_users, user_item_matrix) / np.sum(np.abs(similar_users))
     
-    # Ensure the predicted ratings have the correct shape
+    # Convert predictions into a Series for easier manipulation
     predicted_ratings_df = pd.Series(predicted_ratings, index=user_item_matrix.columns)
     
-    # Only recommend products the user hasn't rated yet
-    user_ratings = user_item_matrix.iloc[user_index]
-    unrated_products = user_ratings[user_ratings == 0].index
+    # Filter out products that have already been rated by the current user
+    rated_products = user_item_matrix.loc[user_item_matrix.index[user_index]] > 0
     
+    # Recommend only unrated products
+    unrated_products = ~rated_products
+    
+    # Recommend top N products based on predicted ratings for unrated products
     recommendations = predicted_ratings_df[unrated_products].sort_values(ascending=False).head(top_n)
+    
+    # If no recommendations, display a message
+    if recommendations.empty:
+        return "No recommendations available, all products are rated."
+
     return recommendations
+
 
 # Streamlit Interface
 st.set_page_config(page_title="Product Recommendation System with PyGWalker", layout="wide")
