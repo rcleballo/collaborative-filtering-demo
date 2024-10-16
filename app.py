@@ -97,5 +97,10 @@ st.write(top_recommendations)
 # **PyGWalker Visualization**
 st.write("## Explore the Data using PyGWalker")
 
-# Use PyGWalker to create an interactive visualization of your dataframe
-pyg.walk(df2)
+Use PyGWalker to create an interactive visualization of your dataframe
+
+# Generate the HTML using PyGWalker
+pyg_html = pyg.walk(df2, return_html = True)
+
+# Embed the HTML into the StreamLit app
+components.html(pyg_html, height = 1000, scrolling = True)
